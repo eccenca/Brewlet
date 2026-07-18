@@ -552,8 +552,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
                 os_log("Standard out type is unknown.", type: .error)
             }
             
-            // Handle the output of the command
-            outputHandler(process, allData)
+            // Handle the output of the command on the main thread.
+            //
+            // `Process.terminationHandler` is invoked on an arbitrary background
+            // thread. Every `outputHandler` passed to `run_command` mutates AppKit
+            // UI (NSMenuItem titles, status-bar image, submenu items, …), which is
+            // only safe on the main thread. Doing it off-main intermittently aborts
+            // the app with an uncaught AppKit/AutoLayout exception — most reliably
+            // when a brew task finishes while the status-bar menu is open, because
+            // changing a menu item's title then forces a live relayout of the open
+            // popup window from the wrong thread.
+            //
+            // Dispatching here (the single choke point) rather than at each call
+            // site guarantees all handlers run on the main thread.
+            DispatchQueue.main.async {
+                outputHandler(process, allData)
+            }
         }
         
         // Run it asynch
