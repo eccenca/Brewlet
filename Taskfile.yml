@@ -1,0 +1,111 @@
+# Taskfile for Brewlet — https://taskfile.dev
+#
+# Wraps the Xcode lifecycle (the same xcodebuild invocations CI uses) behind
+# short commands. All artifacts are written under ./build, which is gitignored.
+#
+# Usage:
+#   task            # list tasks
+#   task build      # fast Debug compile — "does it still compile?"
+#   task run        # build + launch the menu-bar app
+#   task release    # clean, archive, export, and zip a distributable
+#
+# Requires: Xcode command-line tools (xcodebuild). Install task with `brew install go-task`.
+
+version: '3'
+
+vars:
+  PROJECT: Brewlet.xcodeproj
+  SCHEME: Brewlet
+  DERIVED_DATA: build
+  ARCHIVE: build/Brewlet.xcarchive
+  EXPORT_DIR: build/export
+  EXPORT_OPTS: Brewlet/exportOptions.plist
+  APP: build/export/Brewlet.app
+  ZIP: build/Brewlet.zip
+  # Build unsigned: this fork does not hold the upstream signing identity.
+  NOSIGN: CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  build:
+    desc: Compile a Debug build (fast — use to check it compiles)
+    cmds:
+      - >-
+        xcodebuild build
+        -project {{.PROJECT}} -scheme {{.SCHEME}} -configuration Debug
+        -destination 'generic/platform=macOS'
+        -derivedDataPath {{.DERIVED_DATA}}
+        {{.NOSIGN}}
+
+  build:release:
+    desc: Compile an unsigned Release build (matches CI)
+    cmds:
+      - >-
+        xcodebuild build
+        -project {{.PROJECT}} -scheme {{.SCHEME}} -configuration Release
+        -destination 'generic/platform=macOS'
+        -derivedDataPath {{.DERIVED_DATA}}
+        {{.NOSIGN}}
+
+  analyze:
+    desc: Run the Xcode static analyzer
+    cmds:
+      - >-
+        xcodebuild analyze
+        -project {{.PROJECT}} -scheme {{.SCHEME}} -configuration Debug
+        -destination 'generic/platform=macOS'
+        -derivedDataPath {{.DERIVED_DATA}}
+        {{.NOSIGN}}
+
+  run:
+    desc: Build (Debug) and launch the menu-bar app
+    deps: [build]
+    cmds:
+      - open {{.DERIVED_DATA}}/Build/Products/Debug/Brewlet.app
+
+  archive:
+    desc: Create an unsigned Release .xcarchive
+    cmds:
+      - rm -rf {{.ARCHIVE}}
+      - >-
+        xcodebuild archive
+        -project {{.PROJECT}} -scheme {{.SCHEME}} -configuration Release
+        -archivePath {{.ARCHIVE}}
+        {{.NOSIGN}}
+
+  export:
+    desc: Export Brewlet.app from the archive
+    deps: [archive]
+    cmds:
+      - rm -rf {{.EXPORT_DIR}}
+      - >-
+        xcodebuild -exportArchive
+        -archivePath {{.ARCHIVE}}
+        -exportPath {{.EXPORT_DIR}}
+        -exportOptionsPlist {{.EXPORT_OPTS}}
+
+  package:
+    desc: Zip the exported app into build/Brewlet.zip
+    deps: [export]
+    cmds:
+      - rm -f {{.ZIP}}
+      # ditto preserves the bundle layout / symlinks correctly for a .app
+      - ditto -c -k --sequesterRsrc --keepParent {{.APP}} {{.ZIP}}
+      - 'echo "Built {{.ZIP}}"'
+
+  release:
+    desc: Clean, then produce a distributable build/Brewlet.zip
+    cmds:
+      - task: clean
+      - task: package
+
+  clean:
+    desc: Remove all build artifacts
+    cmds:
+      # everything lives under build/; the last three are CI-style root artifacts
+      - rm -rf {{.DERIVED_DATA}} Bl.xcarchive Brewlet.app Brewlet.zip
