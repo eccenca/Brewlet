@@ -301,7 +301,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
 
             // Update icon in main thread
             DispatchQueue.main.async {
-                self.statusItem.button?.image = NSImage(named: iconName)
+                self.setStatusImage(named: iconName, badgeCount: outdatedPackageCount)
+                self.updateTooltip(outdatedCount: outdatedPackageCount)
                 
                 // Upgrade packages if configured to do so
                 let autoUpgrade = self.userDefaults.bool(forKey: "autoUpgrade")
@@ -370,7 +371,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
                     statusItem.title = "\(n_packages - 1) Outdated Packages"
                     updateItem.title = "Upgrade"
                     DispatchQueue.main.async {
-                        self.statusItem.button?.image = NSImage(named: "BrewletIcon-Color")
+                        self.setStatusImage(named: "BrewletIcon-Color", badgeCount: n_packages - 1)
+                        self.updateTooltip(outdatedCount: n_packages - 1)
                     }
                 } else {
                     updateItem.title = "Update"
@@ -581,6 +583,108 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
         }
     }
     
+    /**
+     Set the menu-bar icon, compositing a small red count badge into the
+     icon's corner when there are outdated packages.
+
+     Drawing the count *into* the image keeps the status item's width fixed,
+     unlike a text title drawn beside the icon. Must be called on the main
+     thread.
+
+     - Parameter iconName: The asset name of the base icon to display.
+     - Parameter count: The number of outdated packages; no badge when <= 0.
+     */
+    func setStatusImage(named iconName: String, badgeCount count: Int) {
+        guard let button = statusItem.button else { return }
+        button.title = ""
+        button.imagePosition = .imageOnly
+
+        guard let base = NSImage(named: iconName) else { return }
+
+        guard count > 0 else {
+            button.image = base
+            return
+        }
+
+        let badged = NSImage(size: base.size, flipped: false) { rect in
+            base.draw(in: rect)
+            AppDelegate.drawBadge(count: count, in: rect)
+            return true
+        }
+        badged.isTemplate = false // the red badge must render in colour
+        button.image = badged
+    }
+
+    /**
+     Draw a red count badge in the top-right corner of `rect`.
+
+     Renders as a circle for a single digit and a rounded capsule for wider
+     labels, capped at "99+". The font shrinks to keep the badge within the
+     icon's width, and it is anchored to the right edge so the icon never
+     grows wider.
+     */
+    private static func drawBadge(count: Int, in rect: NSRect) {
+        let text = count > 99 ? "99+" : "\(count)"
+
+        let height = rect.height * 0.6
+        let padding = height * 0.5
+        let maxWidth = rect.width // keep the badge within the icon's footprint
+
+        // Start from a nominal font size, then shrink to fit wider labels
+        // (two digits, "99+") so the capsule never exceeds the icon width.
+        var fontSize = height * 0.68
+        var label = NSAttributedString(string: text,
+                                       attributes: badgeTextAttributes(fontSize: fontSize))
+        if label.size().width + padding > maxWidth {
+            fontSize *= (maxWidth - padding) / label.size().width
+            label = NSAttributedString(string: text,
+                                       attributes: badgeTextAttributes(fontSize: fontSize))
+        }
+        let labelSize = label.size()
+
+        // Circle for a single digit; capsule for wider labels.
+        let width = min(maxWidth, max(height, labelSize.width + padding))
+        let badgeRect = NSRect(x: rect.maxX - width,
+                               y: rect.maxY - height,
+                               width: width,
+                               height: height)
+
+        NSColor.systemRed.setFill()
+        NSBezierPath(roundedRect: badgeRect,
+                     xRadius: height / 2,
+                     yRadius: height / 2).fill()
+
+        label.draw(in: NSRect(x: badgeRect.midX - labelSize.width / 2,
+                              y: badgeRect.midY - labelSize.height / 2,
+                              width: labelSize.width,
+                              height: labelSize.height))
+    }
+
+    /// White bold text attributes for the count badge at the given font size.
+    private static func badgeTextAttributes(fontSize: CGFloat) -> [NSAttributedString.Key: Any] {
+        return [
+            .font: NSFont.systemFont(ofSize: fontSize, weight: .bold),
+            .foregroundColor: NSColor.white
+        ]
+    }
+
+    /**
+     Update the status-item tooltip with the app version, the number of
+     pending updates (the full count, unlike the "99+" badge), and the time
+     of the last check. Must be called on the main thread.
+
+     - Parameter outdatedCount: The number of outdated packages.
+     */
+    func updateTooltip(outdatedCount: Int) {
+        let updates: String
+        switch outdatedCount {
+        case 0: updates = "Up to date"
+        case 1: updates = "1 update"
+        default: updates = "\(outdatedCount) updates"
+        }
+        statusItem.button?.toolTip = "Brewlet \(appVersion ?? ""). \(updates). Last updated \(formatDate())"
+    }
+
     /**
      Animate the status icon.
      
