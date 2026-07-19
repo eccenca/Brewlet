@@ -16,6 +16,7 @@
                 <outlet property="dontUpgradeCasks" destination="DkG-qz-am4" id="a19-45-c0s"/>
                 <outlet property="includeDependencies" destination="064-ff-SAT" id="EcF-bh-YXb"/>
                 <outlet property="intel" destination="XEL-5K-wHg" id="4U6-jd-Owm"/>
+                <outlet property="launchAtLogin" destination="lgn-Bt-n01" id="lgn-Ou-t01"/>
                 <outlet property="shareAnalytics" destination="Fzh-vX-V3a" id="IWq-vV-CyK"/>
                 <outlet property="updateInterval" destination="WZd-Rc-dmM" id="PzN-hH-YKX"/>
                 <outlet property="window" destination="F0z-JX-Cv5" id="gIp-Ho-8D9"/>
@@ -26,12 +27,23 @@
         <window title="Brewlet Preferences" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="F0z-JX-Cv5">
             <windowStyleMask key="styleMask" titled="YES" closable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="196" y="240" width="496" height="385"/>
+            <rect key="contentRect" x="196" y="240" width="496" height="413"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
             <view key="contentView" id="se5-gp-TjO">
-                <rect key="frame" x="0.0" y="0.0" width="496" height="385"/>
+                <rect key="frame" x="0.0" y="0.0" width="496" height="413"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
+                    <button toolTip="Automatically start Brewlet when you sign in. Requires macOS 13 or later." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="lgn-Bt-n01">
+                        <rect key="frame" x="18" y="387" width="250" height="18"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <buttonCell key="cell" type="check" title="Launch Brewlet at login" bezelStyle="regularSquare" imagePosition="left" inset="2" id="lgn-Cl-l01">
+                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="launchAtLoginChanged:" target="-2" id="lgn-Ac-t01"/>
+                        </connections>
+                    </button>
                     <slider verticalHuggingPriority="750" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="WZd-Rc-dmM">
                         <rect key="frame" x="187" y="337" width="291" height="24"/>
                         <constraints>

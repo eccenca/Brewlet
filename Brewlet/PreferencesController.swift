@@ -8,6 +8,7 @@
 
 import OSLog
 import Cocoa
+import ServiceManagement
 
 protocol PreferencesDelegate {
     func updateIntervalChanged(newInterval: TimeInterval?) // if nil, then don't update
@@ -28,6 +29,7 @@ class PreferencesController: NSWindowController {
     @IBOutlet weak var intel: NSButton!
     @IBOutlet weak var appleSilicon: NSButton!
     @IBOutlet weak var custom: NSButton!
+    @IBOutlet weak var launchAtLogin: NSButton!
 
     var delegate: PreferencesDelegate?
     
@@ -70,6 +72,15 @@ class PreferencesController: NSWindowController {
         autoUpgrade.state = defaults.bool(forKey: "autoUpgrade") ? .on : .off
         dontNotifyAvailable.state = defaults.bool(forKey: "dontNotify") ? .on : .off
         dontUpgradeCasks.state = defaults.bool(forKey: "dontUpgradeCasks") ? .on : .off
+
+        // Reflect the real login-item state. SMAppService is the source of
+        // truth, so there is no UserDefaults mirror to read. macOS 13+ only;
+        // on older systems the option is hidden (see launchAtLoginChanged).
+        if #available(macOS 13.0, *) {
+            launchAtLogin.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        } else {
+            launchAtLogin.isHidden = true
+        }
         
         #if arch(arm64)
         let currentBrewPath = defaults.string(forKey: "brewPath") ?? HomebrewPath.appleSilicon.rawValue
@@ -108,6 +119,28 @@ class PreferencesController: NSWindowController {
     @IBAction func dontUpgradeCasksChanged(_ sender: NSButton) {
         os_log("Update don't upgrade casks: %s", type: .info, sender.state == .on ? "on" : "off")
         UserDefaults.standard.set(sender.state == .on, forKey: "dontUpgradeCasks")
+    }
+
+    @IBAction func launchAtLoginChanged(_ sender: NSButton) {
+        // SMAppService requires macOS 13+; the control is hidden below that.
+        guard #available(macOS 13.0, *) else { return }
+        do {
+            if sender.state == .on {
+                if SMAppService.mainApp.status != .enabled {
+                    try SMAppService.mainApp.register()
+                }
+            } else {
+                if SMAppService.mainApp.status == .enabled {
+                    try SMAppService.mainApp.unregister()
+                }
+            }
+            os_log("Set launch at login: %s", type: .info, sender.state == .on ? "on" : "off")
+        } catch {
+            os_log("Failed to set launch at login: %s", type: .error, "\(error)")
+            // Registration failed (e.g. the user must approve it in System
+            // Settings › Login Items) — snap the checkbox back to reality.
+            sender.state = (SMAppService.mainApp.status == .enabled) ? .on : .off
+        }
     }
 
     @IBAction func updateIntervalChanged(_ sender: NSSlider) {
