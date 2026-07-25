@@ -21,7 +21,10 @@ struct Package {
     /// A custom property that is true if any of the installed packages are installed by request,
     /// to make searching and filtering easier.
     var installed_on_request: Bool
-        
+
+    /// True if this package is a cask, false if it is a formula. Used to group the Packages menu.
+    var isCask: Bool = false
+
     /**
      Find the version of the latest _installed_ package.
      
@@ -104,7 +107,8 @@ func unpackJsonCask(_ element: NSDictionary) -> Package {
                    revision: 0,
                    versions: version,
                    installed: installedPackages,
-                   installed_on_request: true)
+                   installed_on_request: true,
+                   isCask: true)
 }
 
 func unpackJsonPackage(_ element: NSDictionary) -> Package {

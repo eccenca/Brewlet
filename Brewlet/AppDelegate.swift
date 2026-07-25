@@ -322,16 +322,45 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
      - Parameter packages: The list of packages to add, using their name and versions.
      */
     func fillPackageMenu(packageMenu : NSMenu, packages: [Package]) {
+        addPackageSection(to: packageMenu, title: "Formulae",
+                          packages: packages.filter { !$0.isCask })
+        addPackageSection(to: packageMenu, title: "Casks",
+                          packages: packages.filter { $0.isCask })
+    }
+
+    /**
+     Appends a titled section of package menu items, preceded by a section header.
+
+     Does nothing when `packages` is empty, so a header is only shown for a group
+     that actually has outdated packages.
+
+     - Parameter menu: The menu to add the header and `NSMenuItem`s to.
+     - Parameter title: The section header label (e.g. "Formulae" or "Casks").
+     - Parameter packages: The packages belonging to this section.
+     */
+    func addPackageSection(to menu: NSMenu, title: String, packages: [Package]) {
+        guard !packages.isEmpty else { return }
+
+        let header: NSMenuItem
+        if #available(macOS 14.0, *) {
+            header = NSMenuItem.sectionHeader(title: title)
+        } else {
+            // Fallback for older systems: a disabled item reads as a non-clickable header.
+            header = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+            header.isEnabled = false
+        }
+        menu.addItem(header)
+
         for package in packages {
             let newVersion = package.getStableVersion()
             let currentVersion = package.getInstalledVersion() ?? "?"
-            let title = "\(package.name) (\(currentVersion)) <  \(newVersion)"
-            
-            let item = NSMenuItem.init(title: title,
+            let itemTitle = "\(package.name) (\(currentVersion)) <  \(newVersion)"
+
+            let item = NSMenuItem.init(title: itemTitle,
                                        action: #selector(AppDelegate.upgradePackage),
                                        keyEquivalent: "")
             item.toolTip = package.desc
-            packageMenu.addItem(item)
+            menu.addItem(item)
         }
     }
     
