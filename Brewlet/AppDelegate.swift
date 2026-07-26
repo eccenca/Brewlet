@@ -131,6 +131,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
     }
     
     /**
+     Run `brew update` to fetch the latest package list from Homebrew.
+
+     Unlike `update_upgrade`, this only refreshes Homebrew's catalog and the
+     outdated-package status; it never upgrades installed packages.
+
+     - Parameter sender: The menu item that triggered the update.
+     - SeeAlso: AppDelegate.update_upgrade, AppDelegate.check_outdated
+     */
+    @IBAction func update(sender: NSMenuItem?) {
+        let animation = animateIcon()
+
+        let previousTitle = sender?.title
+        sender?.isEnabled = false
+        sender?.title = "Updating..."
+
+        let tmpFile = getLogFile()
+        run_command(arguments: ["update"], fileRedirect: tmpFile) { _,_ in
+            os_log("Ran command: `update`.", type: .info)
+
+            sender?.title = previousTitle ?? "Update"
+            sender?.isEnabled = true
+            animation.invalidate()
+            self.check_outdated()
+        }
+
+        let dateStr = formatDate()
+        statusItem.button?.toolTip = "Brewlet \(appVersion ?? ""). Last updated \(dateStr)"
+    }
+
+    /**
      Either run `brew update` or `brew upgrade` on all packages.
      
      If there are existing outdated packages and the user clicks on the upgrade menu item, this function
