@@ -9,6 +9,10 @@ Releases up to and including 1.7.4 were made in the upstream project,
 [zkokaja/Brewlet](https://github.com/zkokaja/Brewlet), and are reconstructed
 here from its tags and commit history.
 
+## [Unreleased]
+
+TODO: add at least one Added, Changed, Deprecated, Removed, Fixed or Security section
+
 ## [1.8.0] 2026-07-29
 
 ### Added
