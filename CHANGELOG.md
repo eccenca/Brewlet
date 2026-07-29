@@ -11,7 +11,22 @@ here from its tags and commit history.
 
 ## [Unreleased]
 
-TODO: add at least one Added, Changed, Deprecated, Removed, Fixed or Security section
+### Fixed
+
+- The menu bar icon tooltip reported the marketing version from `Info.plist`,
+  which lags behind the released version. It now shows the same build version
+  as the Preferences window.
+
+### Changed
+
+- Versions are displayed without the `v` prefix that this project's git tags
+  carry, since the prefix is a tag-naming convention rather than part of the
+  version.
+- The shipped version now derives from git at build time: the nearest tag
+  becomes `CFBundleShortVersionString` and the commit count becomes
+  `CFBundleVersion`. Tags are the single source of truth, so `MARKETING_VERSION`
+  no longer needs bumping by hand — it only serves as the fallback for builds
+  made outside a git checkout.
 
 ## [1.8.0] 2026-07-29
 
