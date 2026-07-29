@@ -48,8 +48,8 @@ class PreferencesController: NSWindowController {
         NSApp.activate(ignoringOtherApps: true)
 
         // Identify the exact build under the window title, e.g.
-        // "v1.7.4-8-g0dd2bdc-dirty" — useful when reporting issues.
-        self.window?.subtitle = Bundle.main.displayVersion
+        // "Version 1.8.0-2-g49b7c16" — useful when reporting issues.
+        self.window?.subtitle = "Version \(Bundle.main.displayVersion)"
         
         // Update view with current preferences
         let defaults = UserDefaults.standard
