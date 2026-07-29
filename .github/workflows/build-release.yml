@@ -5,6 +5,9 @@ on:
     # Sequence of patterns matched against refs/tags
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+  # Manual runs build and package without releasing, so the workflow itself can
+  # be smoke-tested without burning a version number.
+  workflow_dispatch:
 
 # The job-scoped GITHUB_TOKEN is read-only by default; publishing a release
 # needs write access to repository contents.
@@ -36,6 +39,7 @@ jobs:
       run: task package
 
     - name: Extract release notes
+      if: startsWith(github.ref, 'refs/tags/')
       run: |
         version="${GITHUB_REF_NAME#v}"
         awk -v version="$version" '
