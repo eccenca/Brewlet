@@ -23,7 +23,7 @@
                 <menuItem title="Checking..." tag="1" enabled="NO" toolTip="Count the number of installed formulae that have an updated version available." id="Kpo-2q-cbk">
                     <modifierMask key="keyEquivalentModifierMask"/>
                 </menuItem>
-                <menuItem title="Update" tag="10" toolTip="Fetch the latest package list from Homebrew (does not upgrade installed packages)." id="Upd-a1-Itm">
+                <menuItem title="Update" tag="10" hidden="YES" toolTip="Fetch the latest package list from Homebrew (does not upgrade installed packages)." id="Upd-a1-Itm">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
                         <action selector="updateWithSender:" target="Voe-Tx-rLC" id="Upd-a1-Act"/>

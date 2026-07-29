@@ -19,7 +19,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
                     "update": 2,
                     "info": 3,
                     "packages": 4,
-                    "services": 7]
+                    "services": 7,
+                    "plainUpdate": 10]
     
     @IBOutlet weak var statusMenu: NSMenu!
     let userDefaults = UserDefaults.standard
@@ -295,6 +296,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
             // Update  the GUI
             var iconName = ""
             let updateItem = self.statusMenu.item(withTag: self.name2tag["update"]!)!
+            let plainUpdateItem = self.statusMenu.item(withTag: self.name2tag["plainUpdate"]!)!
             let statusItem = self.statusMenu.item(withTag: self.name2tag["outdated"]!)!
             let packageItem = self.statusMenu.item(withTag: self.name2tag["packages"]!)!
             packageItem.submenu?.removeAllItems()
@@ -305,6 +307,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
                 statusItem.title = "\(outdatedPackageCount) Outdated Packages"
                 iconName = "BrewletIcon-Color"
                 updateItem.title = "Upgrade"
+                plainUpdateItem.isHidden = false
                 packageItem.isHidden = false
                 packageItem.isEnabled = true
                 self.fillPackageMenu(packageMenu: packageItem.submenu!, packages: outdatedPackages)
@@ -321,6 +324,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
                 statusItem.title = "Packages are up-to-date"
                 iconName = "BrewletIcon-Black"
                 updateItem.title = "Update"
+                // The combined item already reads "Update", so hide the plain one
+                // to avoid showing "Update" twice.
+                plainUpdateItem.isHidden = true
                 packageItem.isHidden = true
                 packageItem.isEnabled = false
             }
