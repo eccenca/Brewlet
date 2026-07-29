@@ -13,6 +13,7 @@
 		BBC6CAB323EF476C00189F94 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BBC6CAB223EF476C00189F94 /* Assets.xcassets */; };
 		BBC6CAB623EF476C00189F94 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = BBC6CAB423EF476C00189F94 /* MainMenu.xib */; };
 		BBED83622400E6B500B4ADA8 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBED83612400E6B500B4ADA8 /* Package.swift */; };
+		BBF1A0012701000000000003 /* Version.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBF1A0012701000000000002 /* Version.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -25,6 +26,7 @@
 		BBC6CAB723EF476C00189F94 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BBC6CAB823EF476C00189F94 /* BrewLet.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BrewLet.entitlements; sourceTree = "<group>"; };
 		BBED83612400E6B500B4ADA8 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
+		BBF1A0012701000000000002 /* Version.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Version.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +65,7 @@
 				BBC6CAB423EF476C00189F94 /* MainMenu.xib */,
 				BB95C6EE24030F1B00995E0A /* PreferencesController.swift */,
 				BB95C6EF24030F1B00995E0A /* PreferencesController.xib */,
+				BBF1A0012701000000000002 /* Version.swift */,
 				BBC6CAB723EF476C00189F94 /* Info.plist */,
 				BBC6CAB823EF476C00189F94 /* BrewLet.entitlements */,
 			);
@@ -79,6 +82,7 @@
 				BBC6CAA923EF476B00189F94 /* Sources */,
 				BBC6CAAA23EF476B00189F94 /* Frameworks */,
 				BBC6CAAB23EF476B00189F94 /* Resources */,
+				BBF1A0012701000000000001 /* Stamp git version */,
 			);
 			buildRules = (
 			);
@@ -136,6 +140,29 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		BBF1A0012701000000000001 /* Stamp git version */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "Stamp git version";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Write `git describe` into the built Info.plist so the app can show the\n# exact commit it was built from (see Bundle.gitVersion / Version.swift).\n# Runs on every build, since git state is invisible to dependency analysis.\nset -e\n\nplist=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n[ -f \"$plist\" ] || exit 0\n\n# No git (source tarball, or no command-line tools) means nothing to stamp;\n# the app falls back to CFBundleShortVersionString.\ngit_version=\"$(git -C \"${SRCROOT}\" describe --always --dirty --tags 2>/dev/null || true)\"\n[ -n \"$git_version\" ] || exit 0\n\n/usr/libexec/PlistBuddy -c \"Set :GitVersion $git_version\" \"$plist\" 2>/dev/null \\\n    || /usr/libexec/PlistBuddy -c \"Add :GitVersion string $git_version\" \"$plist\"\necho \"note: stamped GitVersion = $git_version\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		BBC6CAA923EF476B00189F94 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -143,6 +170,7 @@
 			files = (
 				BB95C6F024030F1B00995E0A /* PreferencesController.swift in Sources */,
 				BBED83622400E6B500B4ADA8 /* Package.swift in Sources */,
+				BBF1A0012701000000000003 /* Version.swift in Sources */,
 				BBC6CAB123EF476B00189F94 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
