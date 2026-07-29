@@ -26,7 +26,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
     let userDefaults = UserDefaults.standard
     let statusItem: NSStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     
-    let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+    /// Version shown in the status item tooltip, e.g. `1.8.0-2-g49b7c16`. Same
+    /// source as the Preferences window subtitle, so the two never disagree.
+    let appVersion = Bundle.main.displayVersion
     
     var preferencesWindow: PreferencesController!
     
@@ -47,7 +49,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
         
         // Set the icon
         statusItem.menu = statusMenu
-        statusItem.button?.toolTip = "Brewlet \(appVersion ?? "")"
+        statusItem.button?.toolTip = "Brewlet \(appVersion)"
         statusItem.button?.image = NSImage(named: "BrewletIcon-Black")
         statusItem.button?.image?.isTemplate = true
 
@@ -158,7 +160,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
         }
 
         let dateStr = formatDate()
-        statusItem.button?.toolTip = "Brewlet \(appVersion ?? ""). Last updated \(dateStr)"
+        statusItem.button?.toolTip = "Brewlet \(appVersion). Last updated \(dateStr)"
     }
 
     /**
@@ -206,7 +208,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
         }
         
         let dateStr = formatDate()
-        statusItem.button?.toolTip = "Brewlet \(appVersion ?? ""). Last updated \(dateStr)"
+        statusItem.button?.toolTip = "Brewlet \(appVersion). Last updated \(dateStr)"
     }
     
     /**
@@ -747,7 +749,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
         case 1: updates = "1 update"
         default: updates = "\(outdatedCount) updates"
         }
-        statusItem.button?.toolTip = "Brewlet \(appVersion ?? ""). \(updates). Last updated \(formatDate())"
+        statusItem.button?.toolTip = "Brewlet \(appVersion). \(updates). Last updated \(formatDate())"
     }
 
     /**

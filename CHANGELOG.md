@@ -9,6 +9,25 @@ Releases up to and including 1.7.4 were made in the upstream project,
 [zkokaja/Brewlet](https://github.com/zkokaja/Brewlet), and are reconstructed
 here from its tags and commit history.
 
+## [1.8.1] 2026-07-29
+
+### Fixed
+
+- The menu bar icon tooltip reported the marketing version from `Info.plist`,
+  which lags behind the released version. It now shows the same build version
+  as the Preferences window.
+
+### Changed
+
+- Versions are displayed without the `v` prefix that this project's git tags
+  carry, since the prefix is a tag-naming convention rather than part of the
+  version.
+- The shipped version now derives from git at build time: the nearest tag
+  becomes `CFBundleShortVersionString` and the commit count becomes
+  `CFBundleVersion`. Tags are the single source of truth, so `MARKETING_VERSION`
+  no longer needs bumping by hand — it only serves as the fallback for builds
+  made outside a git checkout.
+
 ## [1.8.0] 2026-07-29
 
 ### Added

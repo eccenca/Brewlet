@@ -10,7 +10,7 @@ import Foundation
 extension Bundle {
 
     /// The `git describe --always --dirty --tags` output captured when the app
-    /// was built, e.g. `v1.7.4-8-g0dd2bdc-dirty`.
+    /// was built, e.g. `v1.8.0-2-g49b7c16-dirty`.
     ///
     /// Stamped into the built `Info.plist` by the "Stamp git version" build
     /// phase. Nil when the app was not built from a git checkout (a source
@@ -23,14 +23,30 @@ extension Bundle {
         return version
     }
 
-    /// Human-readable version for display, preferring the exact build
-    /// (`v1.7.4-8-g0dd2bdc-dirty`) and falling back to the released marketing
-    /// version (`v1.7.4`) when no git description was stamped in.
+    /// Version for display, preferring the exact build
+    /// (`1.8.0-2-g49b7c16-dirty`) and falling back to the released marketing
+    /// version (`1.8.0`) when no git description was stamped in.
+    ///
+    /// The `v` that this project's tags carry is a tag-naming convention, not
+    /// part of the version itself, so it is dropped here: the UI shows plain
+    /// version numbers everywhere.
     var displayVersion: String {
-        if let gitVersion = gitVersion {
-            return gitVersion
+        guard let gitVersion = gitVersion else {
+            return infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         }
-        let marketingVersion = infoDictionary?["CFBundleShortVersionString"] as? String
-        return "v\(marketingVersion ?? "?")"
+        return gitVersion.droppingTagPrefix
+    }
+}
+
+private extension String {
+
+    /// Drops a leading `v` when it introduces a version number, leaving bare
+    /// commit hashes (what `git describe --always` falls back to in a repo
+    /// without tags) untouched.
+    var droppingTagPrefix: String {
+        guard hasPrefix("v"), dropFirst().first?.isNumber == true else {
+            return self
+        }
+        return String(dropFirst())
     }
 }

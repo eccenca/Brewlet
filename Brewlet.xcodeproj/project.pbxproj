@@ -152,14 +152,14 @@
 			inputPaths = (
 				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
 			);
-			name = "Stamp git version";
+			name = "Stamp version from git";
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Write `git describe` into the built Info.plist so the app can show the\n# exact commit it was built from (see Bundle.gitVersion / Version.swift).\n# Runs on every build, since git state is invisible to dependency analysis.\nset -e\n\nplist=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n[ -f \"$plist\" ] || exit 0\n\n# No git (source tarball, or no command-line tools) means nothing to stamp;\n# the app falls back to CFBundleShortVersionString.\ngit_version=\"$(git -C \"${SRCROOT}\" describe --always --dirty --tags 2>/dev/null || true)\"\n[ -n \"$git_version\" ] || exit 0\n\n/usr/libexec/PlistBuddy -c \"Set :GitVersion $git_version\" \"$plist\" 2>/dev/null \\\n    || /usr/libexec/PlistBuddy -c \"Add :GitVersion string $git_version\" \"$plist\"\necho \"note: stamped GitVersion = $git_version\"\n";
+			shellScript = "# Derive the built Info.plist's version keys from git, so the tags are the\n# single source of truth and MARKETING_VERSION never has to be hand-edited.\n# Runs on every build, since git state is invisible to dependency analysis,\n# and before signing, so rewriting the plist is safe.\nset -e\n\nplist=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n[ -f \"$plist\" ] || exit 0\n\n# No git (a source tarball, or no command-line tools) means nothing to derive\n# from; what MARKETING_VERSION baked in stands as the fallback.\ngit_version=\"$(git -C \"${SRCROOT}\" describe --always --dirty --tags 2>/dev/null || true)\"\n[ -n \"$git_version\" ] || exit 0\n\n# The exact build, e.g. v1.8.0-2-g49b7c16-dirty (see Version.swift).\n/usr/libexec/PlistBuddy -c \"Set :GitVersion $git_version\" \"$plist\" 2>/dev/null \\\n    || /usr/libexec/PlistBuddy -c \"Add :GitVersion string $git_version\" \"$plist\"\necho \"note: stamped GitVersion = $git_version\"\n\n# The release version follows the nearest tag (v1.8.0 -> 1.8.0). A tag that is\n# not a plain version number is left alone, since CFBundleShortVersionString\n# has to be period-separated integers.\ntag=\"$(git -C \"${SRCROOT}\" describe --tags --abbrev=0 2>/dev/null || true)\"\nversion=\"${tag#v}\"\ncase \"$version\" in\n    \"\"|*[!0-9.]*)\n        echo \"note: nearest tag (${tag:-none}) is not a version; keeping CFBundleShortVersionString\"\n        ;;\n    *)\n        /usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $version\" \"$plist\"\n        echo \"note: stamped CFBundleShortVersionString = $version\"\n        ;;\nesac\n\n# The build number is the commit count: an integer that only ever grows, which\n# is all CFBundleVersion has to be. A shallow clone would undercount, so leave\n# it alone rather than go backwards.\nif [ ! -f \"$(git -C \"${SRCROOT}\" rev-parse --git-dir)/shallow\" ]; then\n    build_number=\"$(git -C \"${SRCROOT}\" rev-list --count HEAD 2>/dev/null || true)\"\n    if [ -n \"$build_number\" ]; then\n        /usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $build_number\" \"$plist\"\n        echo \"note: stamped CFBundleVersion = $build_number\"\n    fi\nelse\n    echo \"note: shallow clone; keeping CFBundleVersion\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -320,7 +320,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
-				MARKETING_VERSION = 1.7.4;
+				MARKETING_VERSION = 1.8.1;
 				PRODUCT_BUNDLE_IDENTIFIER = zzada.Brewlet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -341,7 +341,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
-				MARKETING_VERSION = 1.7.4;
+				MARKETING_VERSION = 1.8.1;
 				PRODUCT_BUNDLE_IDENTIFIER = zzada.Brewlet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
