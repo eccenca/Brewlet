@@ -46,6 +46,10 @@ class PreferencesController: NSWindowController {
         self.window?.makeKeyAndOrderFront(nil)
         self.window?.level = .popUpMenu
         NSApp.activate(ignoringOtherApps: true)
+
+        // Identify the exact build under the window title, e.g.
+        // "v1.7.4-8-g0dd2bdc-dirty" — useful when reporting issues.
+        self.window?.subtitle = Bundle.main.displayVersion
         
         // Update view with current preferences
         let defaults = UserDefaults.standard
