@@ -9,6 +9,22 @@ Releases up to and including 1.7.4 were made in the upstream project,
 [zkokaja/Brewlet](https://github.com/zkokaja/Brewlet), and are reconstructed
 here from its tags and commit history.
 
+## [1.8.2] 2026-07-29
+
+### Changed
+
+- Releases are built by the same `task package` command used locally and
+  published with the GitHub CLI, taking their notes from this file. They are no
+  longer marked as drafts or prereleases, and the runner image is pinned so a
+  release cannot silently change Xcode versions.
+
+### Fixed
+
+- The version stamp looked for `.git/shallow` relative to the build's working
+  directory rather than the project, so a shallow clone could pass for a full
+  one and stamp a build number lower than the previous release's. It now asks
+  git directly.
+
 ## [1.8.1] 2026-07-29
 
 ### Fixed
@@ -193,7 +209,9 @@ here from its tags and commit history.
   packages and can upgrade them, clean up, and export the installed package
   list.
 
-[Unreleased]: https://github.com/eccenca/Brewlet/compare/v1.7.4...HEAD
+[1.8.2]: https://github.com/eccenca/Brewlet/compare/v1.8.1...v1.8.2
+[1.8.1]: https://github.com/eccenca/Brewlet/compare/v1.8.0...v1.8.1
+[1.8.0]: https://github.com/eccenca/Brewlet/compare/v1.7.4...v1.8.0
 [1.7.4]: https://github.com/eccenca/Brewlet/compare/v1.7.3...v1.7.4
 [1.7.3]: https://github.com/eccenca/Brewlet/compare/v1.7.2...v1.7.3
 [1.7.2]: https://github.com/eccenca/Brewlet/compare/v1.7.1...v1.7.2
