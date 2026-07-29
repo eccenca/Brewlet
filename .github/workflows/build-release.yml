@@ -6,41 +6,53 @@ on:
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
+# The job-scoped GITHUB_TOKEN is read-only by default; publishing a release
+# needs write access to repository contents.
+permissions:
+  contents: write
+
 jobs:
   build:
 
-    runs-on: macOS-latest
+    # Pinned rather than macos-latest, so a runner image roll cannot change
+    # the Xcode version a release was built with. Bump deliberately.
+    runs-on: macos-15
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
+      with:
+        # Full history and tags: the "Stamp version from git" build phase reads
+        # the nearest tag for CFBundleShortVersionString and the commit count
+        # for CFBundleVersion. A shallow checkout silently falls back to
+        # MARKETING_VERSION.
+        fetch-depth: 0
 
-    - name: Build App
+    - name: Install Task
+      run: brew install go-task
+
+    # The same commands used locally, so CI and a developer's machine cannot
+    # drift: Release archive, export, and a ditto-compressed build/Brewlet.zip.
+    - name: Build and package
+      run: task package
+
+    - name: Extract release notes
       run: |
-        xcodebuild build -project 'Brewlet.xcodeproj' -scheme 'Brewlet' -destination 'generic/platform=macOS' -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
-        xcodebuild -scheme 'Brewlet' -configuration Release archive -archivePath Bl.xcarchive
-        xcodebuild -exportArchive -exportPath . -archivePath Bl.xcarchive/ -exportOptionsPlist Brewlet/exportOptions.plist
-
-    - name: Compress App
-      run: zip -r Brewlet.zip Brewlet.app
+        version="${GITHUB_REF_NAME#v}"
+        awk -v version="$version" '
+          index($0, "## [" version "]") == 1 { inside = 1; next }
+          inside && /^## / { exit }
+          inside { print }
+        ' CHANGELOG.md > release-notes.md
+        if [ -s release-notes.md ]; then
+          echo "notes=--notes-file=release-notes.md" >> "$GITHUB_ENV"
+        else
+          echo "::warning::no CHANGELOG section for $version; generating notes"
+          echo "notes=--generate-notes" >> "$GITHUB_ENV"
+        fi
 
     - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1.0.0
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: true
-        prerelease: true
-
-    - name: Upload Release Asset
-      id: upload-release-asset
-      uses: actions/upload-release-asset@v1.0.1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./Brewlet.zip
-        asset_name: Brewlet.zip
-        asset_content_type: application/zip
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release create "$GITHUB_REF_NAME" build/Brewlet.zip \
+          --title "$GITHUB_REF_NAME" "$notes"
