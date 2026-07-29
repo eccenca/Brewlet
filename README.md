@@ -3,8 +3,8 @@
 Brewlet
 </h1>
 
-<a href="https://github.com/zkokaja/Brewlet/releases/latest">
-  <img src="https://img.shields.io/github/release/zkokaja/Brewlet.svg" alt="GitHub Release"/>
+<a href="https://github.com/eccenca/Brewlet/releases/latest">
+  <img src="https://img.shields.io/github/release/eccenca/Brewlet.svg" alt="GitHub Release"/>
 </a>
 
 The missing menulet for [brew.sh].
@@ -13,8 +13,8 @@ This menulet makes it easier to use [brew.sh]. For example, you need to
 manually check if some of your packages can be updated. With Brewlet it's easy:
 if everything is working swimmingly, then you'll see the normal shadow 
 <img src="images/brewlet-black.svg" width="16px" /> 
-icon. If updates are available to be installed, the icon will become colored,
-<img src="images/brewlet-color.svg" width="16px" /> , to get your attention –
+icon. If updates are available to be installed, the icon will carry a 
+badge with the number of upgradable packages, to get your attention –
 along with a notification if you wish.
 Once clicked, you'll be able to upgrade your packages, among other options.
 In addition, Brewlet will periodically check the status of packages in the
@@ -35,11 +35,12 @@ brew install brewlet
 ```
 
 Or download the latest version from 
-[releases](https://github.com/zkokaja/Brewlet/releases/latest)
+[releases](https://github.com/eccenca/Brewlet/releases/latest)
 or 
-[here (zip)](https://github.com/zkokaja/Brewlet/releases/latest/download/Brewlet.zip).
+[here (zip)](https://github.com/eccenca/Brewlet/releases/latest/download/Brewlet.zip).
 
 You can upgrade to the latest version by running:
+
 ```bash
 brew update
 brew upgrade brewlet
