@@ -1,0 +1,14 @@
+---
+# Relaxations for GitHub Actions workflows, which cannot satisfy stock yamllint:
+# "on:" is a required key that YAML 1.1 reads as a boolean, and workflows are
+# conventionally written without a document start marker.
+extends: default
+
+rules:
+  document-start: disable
+  truthy:
+    check-keys: false
+  comments:
+    min-spaces-from-content: 1
+  indentation:
+    indent-sequences: whatever

@@ -11,16 +11,14 @@ here from its tags and commit history.
 
 ## [Unreleased]
 
-TODO: add at least one Added, Changed, Deprecated, Removed, Fixed or Security section
-
-## [1.8.2] 2026-07-29
-
 ### Changed
 
 - Releases are built by the same `task package` command used locally and
   published with the GitHub CLI, taking their notes from this file. They are no
   longer marked as drafts or prereleases, and the runner image is pinned so a
   release cannot silently change Xcode versions.
+- The README points at this fork's releases rather than upstream's, and
+  describes the count badge that replaced the colored icon.
 
 ### Fixed
 
@@ -213,7 +211,7 @@ TODO: add at least one Added, Changed, Deprecated, Removed, Fixed or Security se
   packages and can upgrade them, clean up, and export the installed package
   list.
 
-[1.8.2]: https://github.com/eccenca/Brewlet/compare/v1.8.1...v1.8.2
+[1.8.3]: https://github.com/eccenca/Brewlet/compare/v1.8.1...v1.8.3
 [1.8.1]: https://github.com/eccenca/Brewlet/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/eccenca/Brewlet/compare/v1.7.4...v1.8.0
 [1.7.4]: https://github.com/eccenca/Brewlet/compare/v1.7.3...v1.7.4
