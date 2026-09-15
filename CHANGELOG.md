@@ -11,7 +11,17 @@ here from its tags and commit history.
 
 ## [Unreleased]
 
-TODO: add at least one Added, Changed, Deprecated, Removed, Fixed or Security section
+### Fixed
+
+- The menu stayed on "Checking..." and "Updating..." for good once Homebrew
+  printed a warning while listing installed packages, as Homebrew 7 does for
+  taps whose casks use deprecated DSL. The warning went into the same stream as
+  the package list and made it unparseable. Brewlet now parses standard output
+  only and logs anything written to standard error.
+- A package check that fails anyway no longer leaves the menu stuck: it reports
+  that the check failed and re-enables Update so it can be retried.
+- The status line never showed "Checking..." during a check, because the code
+  changed the title of the wrong menu item.
 
 ## [1.8.3] 2026-07-29
 
