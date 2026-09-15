@@ -9,7 +9,7 @@ Releases up to and including 1.7.4 were made in the upstream project,
 [zkokaja/Brewlet](https://github.com/zkokaja/Brewlet), and are reconstructed
 here from its tags and commit history.
 
-## [Unreleased]
+## [1.9.0] 2026-09-15
 
 ### Fixed
 
