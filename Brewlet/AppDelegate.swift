@@ -266,41 +266,51 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
      Will also update the GUI with the appropriate actions (i.e. upgrade if outdated packages exist).
      */
     func check_outdated() {
-        let statusItem = statusMenu.item(withTag: 0)!
+        let statusItem = statusMenu.item(withTag: name2tag["outdated"]!)!
         statusItem.title = "Checking..."
-        
+
         let updateItem = self.statusMenu.item(withTag: self.name2tag["update"]!)!
         updateItem.title = "Updating..."
         updateItem.isEnabled = false
-        
+
         let packageItem = self.statusMenu.item(withTag: self.name2tag["packages"]!)!
         packageItem.isEnabled = false
-        
+
         run_command(arguments: ["info", "--json=v2", "--installed"]) { (_, data: Data) in
             // Determine which packages to include
             let includeDependencies = self.userDefaults.bool(forKey: "includeDependencies")
             let criterion: (Package) -> Bool = includeDependencies
                 ? { $0.outdated }
                 : { $0.outdated && $0.installed_on_request }
-            
+
             // Keep only packages that are outdated and meet the above criteria
             let previousOutdatedPackageCount = self.packages.filter(criterion).count
-            
+
+            let plainUpdateItem = self.statusMenu.item(withTag: self.name2tag["plainUpdate"]!)!
+
             do {
                 self.packages = try packagesFromJson(jsonData: data)
             } catch {
                 os_log("Unexpected error: %s", type: .error, "\(error)")
+
+                // Leave the menu usable instead of stuck on "Checking..." with
+                // Update disabled. Dropping the stale packages makes Update run
+                // `brew update` and check again, as its title says.
+                self.packages = []
+                statusItem.title = "Unable to check packages"
+                updateItem.title = "Update"
+                updateItem.isEnabled = true
+                plainUpdateItem.isHidden = true
+                packageItem.isHidden = true
+                self.setStatusImage(named: "BrewletIcon-Black", badgeCount: 0)
+
                 self.sendNotification(title: "Unexpected Error",
                                       body: "An unexpected error occurred in JSON serialization. See log for details.")
                 return
             }
-            
+
             // Update  the GUI
             var iconName = ""
-            let updateItem = self.statusMenu.item(withTag: self.name2tag["update"]!)!
-            let plainUpdateItem = self.statusMenu.item(withTag: self.name2tag["plainUpdate"]!)!
-            let statusItem = self.statusMenu.item(withTag: self.name2tag["outdated"]!)!
-            let packageItem = self.statusMenu.item(withTag: self.name2tag["packages"]!)!
             packageItem.submenu?.removeAllItems()
             
             let outdatedPackages = self.packages.filter(criterion)
@@ -586,7 +596,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
      function can use it in the given closure.
      
      - Parameter arguments: A list of args to pass after the `brew` command.
-     - Parameter fileRedirect: An optional file handler for standard output. By default will be piped to a Data buffer.
+     - Parameter fileRedirect: An optional file handle for both standard output and standard error. By default, standard output is piped to a Data buffer and standard error is logged.
      - Parameter outputHandler: Closure to run when the command terminates (successfully or not).
      */
     func run_command(arguments: [String],
@@ -601,26 +611,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
         task.launchPath = "/bin/bash"
         task.arguments = [brewPath] + arguments
         
-        let pipe = Pipe()
-        var allData = Data() // What happens to the scope of this variable when used inside the closure??
-        pipe.fileHandleForReading.readabilityHandler = { fh in
-            let data = fh.availableData
-            allData.append(data)
+        // A log file receives both streams, but `outputHandler` gets stdout
+        // alone: Homebrew prints warnings on stderr (e.g. when a tap's cask
+        // uses deprecated DSL), and mixed into stdout they made the output of
+        // `brew info --json` unparseable.
+        let capturesOutput = fileRedirect == nil
+        let outputPipe = Pipe()
+        let errorPipe = Pipe()
+        if let fileRedirect = fileRedirect {
+            task.standardOutput = fileRedirect
+            task.standardError = fileRedirect
+        } else {
+            task.standardOutput = outputPipe
+            task.standardError = errorPipe
         }
-        task.standardOutput = fileRedirect != nil ? fileRedirect : pipe
-        task.standardError = task.standardOutput
-        
+
+        // Each pipe is read to EOF on its own background thread once the
+        // process runs, since a pipe nobody reads fills up and blocks `brew`.
+        // The group is entered before launch, so the termination handler
+        // cannot find it empty and hand over the output before the reads end.
+        var output = Data()
+        var errorOutput = Data()
+        let reads = DispatchGroup()
+        if capturesOutput {
+            reads.enter() // stdout
+            reads.enter() // stderr
+        }
+
         task.terminationHandler = { (process: Process) in
-            if let stdout = process.standardOutput as? Pipe {
-                allData.append(stdout.fileHandleForReading.readDataToEndOfFile())
-            }
-            else if let stdout = process.standardOutput as? FileHandle {
-                stdout.closeFile()
-            }
-            else {
-                os_log("Standard out type is unknown.", type: .error)
-            }
-            
+            (process.standardOutput as? FileHandle)?.closeFile()
+
             // Handle the output of the command on the main thread.
             //
             // `Process.terminationHandler` is invoked on an arbitrary background
@@ -634,11 +654,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
             //
             // Dispatching here (the single choke point) rather than at each call
             // site guarantees all handlers run on the main thread.
-            DispatchQueue.main.async {
-                outputHandler(process, allData)
+            reads.notify(queue: .main) {
+                if !errorOutput.isEmpty {
+                    os_log("`brew %s` wrote to stderr: %s", type: .default,
+                           arguments.joined(separator: " "),
+                           String(decoding: errorOutput, as: UTF8.self))
+                }
+                outputHandler(process, output)
             }
         }
-        
+
         // Run it asynch
         do {
             try task.run()
@@ -647,6 +672,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, PreferencesDelegate {
             os_log("Unexpected error: %s", type: .error, "\(error)")
             self.sendNotification(title: "Unexpected Error",
                                   body: "An unexpected error occurred for \(arguments). See log for details.")
+            return
+        }
+
+        if capturesOutput {
+            DispatchQueue.global().async {
+                output = outputPipe.fileHandleForReading.readDataToEndOfFile()
+                reads.leave()
+            }
+            DispatchQueue.global().async {
+                errorOutput = errorPipe.fileHandleForReading.readDataToEndOfFile()
+                reads.leave()
+            }
         }
     }
     
